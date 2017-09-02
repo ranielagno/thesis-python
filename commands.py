@@ -41,7 +41,7 @@ class Commands():
             "Armed": self.vehicle.armed
         }
         self.printVehicleParams()
-        if not self.vehicle.is_armable
+        if not self.vehicle.is_armable:
             return {"message": "Error! Drone can't initialise!"}
         return vehicleParams
         
