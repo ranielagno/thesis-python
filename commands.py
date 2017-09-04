@@ -4,7 +4,7 @@ import time
 import argparse  
 
 class Commands():
-
+    
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('--connect', default='/dev/serial0')
@@ -23,7 +23,7 @@ class Commands():
         while not self.vehicle.is_armable and time.time() < timeout:
             print " Waiting for vehicle to initialise..."
             time.sleep(1)
-            
+        
     def getVehicleParams(self):
         vehicleParams = {
             "Global Location": self.vehicle.location.global_frame,
@@ -41,7 +41,7 @@ class Commands():
             "Armed": self.vehicle.armed
         }
         self.printVehicleParams()
-        if not self.vehicle.is_armable
+        if not self.vehicle.is_armable:
             return {"message": "Error! Drone can't initialise!"}
         return vehicleParams
         
@@ -91,6 +91,9 @@ class Commands():
         print("Take off complete")    
         print("Now change the mode to loiter")
         self.vehicle.mode = VehicleMode("LOITER")
+        while not self.vehicle.mode.name is "LOITER":
+            print " Waiting for loiter command execution..."
+            time.sleep(1)
         
     def setMission(self, data):
         pass
