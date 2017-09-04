@@ -1,28 +1,28 @@
 from flask import request
 from flask_restful import Resource
+import json
 from commands import Commands
 
 
 class Drone(Resource):
+    commands = None
+    def get(self,command):
+        global commands
+        commands = Commands()
+        self.vehicle = commands.setup()
+        return self.vehicle
 
-    def get(self,command):    
-        print "Yeah"
-        self.commands = Commands()
-        vehicle = self.commands.getVehicleParams()
-        return vehicle
-        
     def post(self,command):
-        self.commands = Commands()
+        global commands
         if command == "land":
-            self.commands.land()
+            commands.land()
         elif command == "rtl":
-            self.commands.returnToLand()
+            commands.returnToLand()
         elif command == "takeoff":
-            #data = request.get_json()
-            #print data
-            self.commands.takeOff(2)
+            data = request.get_json()
+            print data
+            commands.takeOff(data['altitude'])
         elif command == "route":
             data = request.get_json()
             print data
-            self.commands.setMission(data)
-        
+            commands.setMission(data)
