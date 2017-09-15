@@ -7,40 +7,54 @@ import argparse
 # For simulator
 import dronekit_sitl
 
+
 class Commands():
 
     def setup(self):
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument('--connect', default='/dev/serial0')
+        parser.add_argument('--connect', default='com7')
         args = parser.parse_args()
 
-        # Connect to the Vehicle
-        print 'Connecting to vehicle on: %s' % args.connect
-        self.vehicle = connect(args.connect, baud=57600, wait_ready=True)
         """
-
         # Connection for simulator
         sitl = dronekit_sitl.start_default()
         connection_string = sitl.connection_string()
         print("Connecting to vehicle on: %s" % (connection_string,))
         self.vehicle = connect(connection_string, wait_ready=True)
 
+        """
+        # Connect to the Vehicle
+        print 'Connecting to vehicle on: %s' % args.connect
+        self.vehicle = connect(args.connect, baud=57600, wait_ready=True)
+        """
+
         print "Basic pre-arm checks"
 
         # Timeout 5 mins
         timeout = time.time() + 60*5
-
+        """
         # Don't let the user try to arm until autopilot is ready
         while not self.vehicle.is_armable and time.time() < timeout:
             print " Waiting for vehicle to initialise..."
             time.sleep(1)
+        """
 
+        vehicleParams = self.getVehicleParams();
+        self.printVehicleParams()
+        """
+        if not self.vehicle.is_armable:
+            return "Error!"
+        """
+        return vehicleParams
+
+    def getVehicleParams(self):
+        #self.printVehicleParams()
         vehicleParams = {
             #Global Location (relative altitude)
             "gps_location": {
-                "latitude": self.vehicle.location.global_relative_frame.lat,
-                "longitude": self.vehicle.location.global_relative_frame.lon,
+                "latitude": 14.605160,
+                "longitude": 121.002181,
                 "altitude": self.vehicle.location.global_relative_frame.alt
             },
             "velocity": self.vehicle.velocity,
@@ -54,11 +68,10 @@ class Commands():
             "groundspeed": self.vehicle.groundspeed,
             "airspeed": self.vehicle.airspeed,
             "mode": self.vehicle.mode.name,
-            "armed": self.vehicle.armed
+            "armed": self.vehicle.armed,
+            "heading": self.vehicle.heading
         }
-        self.printVehicleParams()
-        if not self.vehicle.is_armable:
-            return {"message": "Error! Drone can't initialise!"}
+
         return vehicleParams
 
     def arm(self):
@@ -93,7 +106,7 @@ class Commands():
 
     def returnToLand(self):
         print("Now let's return to land")
-        vehicle.mode = VehicleMode("RTL")
+        self.vehicle.mode = VehicleMode("RTL")
         while not self.vehicle.mode.name is "RTL":
             print "Waiting for return to land command execution..."
             time.sleep(1)
@@ -119,15 +132,15 @@ class Commands():
 
     def printVehicleParams(self):
         print " Global Location (relative altitude): {}".format(
-            self.vehicle.location.global_relative_frame)
-        print " Velocity: %s" % self.vehicle.velocity
-        print " Battery: %s" % self.vehicle.battery
-        print " Is Armable?: %s" % self.vehicle.is_armable
-        print " System status: %s" % self.vehicle.system_status.state
-        print " Groundspeed: %s" % self.vehicle.groundspeed    # settable
-        print " Airspeed: %s" % self.vehicle.airspeed    # settable
-        print " Mode: %s" % self.vehicle.mode.name    # settable
-        print " Armed: %s" % self.vehicle.armed    # settable
+            type(self.vehicle.location.global_relative_frame.lat))
+        print " Velocity: %s" % type(self.vehicle.velocity)
+        print " Battery: %s" % type(self.vehicle.battery.voltage)
+        print " Is Armable?: %s" % type(self.vehicle.is_armable)
+        print " System status: %s" % type(self.vehicle.system_status.state)
+        print " Groundspeed: %s" % type(self.vehicle.groundspeed)    # settable
+        print " Airspeed: %s" % type(self.vehicle.airspeed)    # settable
+        print " Mode: %s" % type(self.vehicle.mode.name)    # settable
+        print " Armed: %s" % type(self.vehicle.armed)    # settable
 
     def get_distance_metres(self, aLocation1, aLocation2):
         # Returns the ground distance in metres
@@ -179,12 +192,15 @@ class Commands():
                 coords[u'latitude'], coords[u'longitude'], data['altitude'])
             self.cmds.add(self.cmd)
 
+	    self.cmds.add(Command(
+                0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+                mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH, 0, 0, 0, 0, 0, 0,
+                0, 0, 10))
         print " Upload new commands to vehicle"
         self.cmds.upload()
 
         # Start to takeoff
         self.takeOff(data['altitude'])
-
 
         print "Starting mission"
         # Reset mission set to first (0) waypoint
@@ -197,7 +213,22 @@ class Commands():
             print "Waiting for AUTO mode"
             time.sleep(1)
 
-        # Monitor mission.
+        while True:
+            nextwaypoint = self.vehicle.commands.next
+            print 'Distance to waypoint ({0}): {1:.4f}'.format(
+            nextwaypoint, self.distance_to_current_waypoint())
+
+            # Dummy waypoint - as soon as we reach waypoint 4
+            # this is true and we exit.
+            if nextwaypoint>len(data['points']):
+                print "Exit 'standard' mission when start",
+                print "heading to final waypoint %s" % len(data['points'])
+                break;
+                time.sleep(1)
+        self.returnToLand()
+
+    def monitorMission(self):
+	    # Monitor mission.
         # Demonstrates getting and setting the command number
         # Uses distance_to_current_waypoint(),
         # a convenience function for finding the distance to the next waypoint.
@@ -214,6 +245,16 @@ class Commands():
                 print "heading to final waypoint %s" % len(data['points'])
                 break;
             time.sleep(1)
-
-        print 'Return to launch'
-        self.vehicle.mode = VehicleMode("RTL")
+        self.returnToLand()
+    """
+	def monitorTakeOff(self):
+	    # Check that vehicle has reached takeoff altitude
+        while True:
+            print " Altitude: ", self.vehicle.location.global_relative_frame.alt
+            #Break and return from function just below target altitude.
+            if self.vehicle.location.global_relative_frame.alt>=altitude*0.95:
+                print "Reached target altitude"
+                break;
+            time.sleep(1)
+        print("Take off complete")
+    """

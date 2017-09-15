@@ -1,11 +1,18 @@
-from flask import request
+from flask import request, copy_current_request_context
 from flask_restful import Resource
-import json
+from flask_socketio import Namespace, emit, socketio
 from commands import Commands
+from threading import Lock
 
+import json
+import time
+
+thread = None
+thread_lock = Lock()
 
 class Drone(Resource):
     commands = None
+
     def get(self,command):
         global commands
         commands = Commands()
@@ -26,3 +33,31 @@ class Drone(Resource):
             data = request.get_json()
             print data
             commands.setMission(data)
+
+    @staticmethod
+    def returnCommand():
+        global commands
+        return commands
+
+
+class DroneParams(Namespace):
+    socketio = None
+    def __init__(self,*args):
+        global socketio
+        super(DroneParams, self).__init__(args[0])
+        socketio = args[1]
+
+    def on_connect(self):
+        global thread
+        global socketio
+        print "Connected"
+
+        @copy_current_request_context
+        def getParamsTask():
+            while 1:
+                print "Emitting..."
+                emit("paramaters", Drone().returnCommand().getVehicleParams())
+                socketio.sleep(1)
+        with thread_lock:
+            if thread is None:
+                thread = socketio.start_background_task(target=getParamsTask)
