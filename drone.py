@@ -16,8 +16,10 @@ class Drone(Resource):
     def get(self,command):
         global commands
         commands = Commands()
-        self.vehicle = commands.setup()
-        return self.vehicle
+        self.vehicleParams = commands.setup()
+        print self.vehicleParams
+
+        return self.vehicleParams
 
     def post(self,command):
         global commands
@@ -39,8 +41,9 @@ class Drone(Resource):
         global commands
         return commands
 
-
+"""
 class DroneParams(Namespace):
+
     socketio = None
     def __init__(self,*args):
         global socketio
@@ -61,3 +64,4 @@ class DroneParams(Namespace):
         with thread_lock:
             if thread is None:
                 thread = socketio.start_background_task(target=getParamsTask)
+"""

@@ -1,12 +1,12 @@
 from dronekit import connect, VehicleMode, LocationGlobalRelative, Command
 from pymavlink import mavutil
+from callbacks import Callbacks
 import time
 import math
 import argparse
 
 # For simulator
 import dronekit_sitl
-
 
 class Commands():
 
@@ -31,24 +31,25 @@ class Commands():
 
         print "Basic pre-arm checks"
 
-        # Timeout 5 mins
-        timeout = time.time() + 60*5
-        """
         # Don't let the user try to arm until autopilot is ready
-        while not self.vehicle.is_armable and time.time() < timeout:
+        while not self.vehicle.is_armable:
             print " Waiting for vehicle to initialise..."
             time.sleep(1)
-        """
+
 
         vehicleParams = self.getVehicleParams();
         self.printVehicleParams()
+
+        callbacks = Callbacks(self.vehicle)
         """
         if not self.vehicle.is_armable:
             return "Error!"
         """
         return vehicleParams
 
+
     def getVehicleParams(self):
+
         #self.printVehicleParams()
         vehicleParams = {
             #Global Location (relative altitude)
@@ -72,6 +73,15 @@ class Commands():
             "heading": self.vehicle.heading
         }
 
+        """
+        system status state
+        armable
+        Mode
+        armed
+        heading
+        gps location
+        battery
+        """
         return vehicleParams
 
     def arm(self):

@@ -1,0 +1,11 @@
+Flask
+flask-restful
+flask-socketio
+eventlet
+screen
+numpy
+future
+pymavlink
+mavproxy
+dronekit
+dronekit-sitl
