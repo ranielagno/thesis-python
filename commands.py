@@ -5,37 +5,26 @@ import time
 import math
 import argparse
 
-# For simulator
-import dronekit_sitl
-
 class Commands():
 
     def setup(self):
-        """
+
         parser = argparse.ArgumentParser()
-        parser.add_argument('--connect', default='com7')
+        parser.add_argument('--connect', default='/dev/ttyACM0')
         args = parser.parse_args()
 
-        """
-        # Connection for simulator
-        sitl = dronekit_sitl.start_default()
-        connection_string = sitl.connection_string()
-        print("Connecting to vehicle on: %s" % (connection_string,))
-        self.vehicle = connect(connection_string, wait_ready=True)
-
-        """
         # Connect to the Vehicle
         print 'Connecting to vehicle on: %s' % args.connect
-        self.vehicle = connect(args.connect, baud=57600, wait_ready=True)
-        """
+        self.vehicle = connect(args.connect, baud=115200, wait_ready=True)
 
         print "Basic pre-arm checks"
 
+        
         # Don't let the user try to arm until autopilot is ready
         while not self.vehicle.is_armable:
             print " Waiting for vehicle to initialise..."
             time.sleep(1)
-
+        
 
         vehicleParams = self.getVehicleParams();
         self.printVehicleParams()

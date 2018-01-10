@@ -1,11 +1,10 @@
 Flask
 flask-restful
 flask-socketio
-eventlet
+uwsgi
 screen
 numpy
 future
 pymavlink
 mavproxy
 dronekit
-dronekit-sitl
