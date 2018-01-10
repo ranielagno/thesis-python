@@ -1,4 +1,4 @@
-from flask import Flask, request, copy_current_request_context
+from flask import Flask, render_template
 from flask_restful import Resource, Api
 from flask_socketio import SocketIO, emit
 from drone import Drone
