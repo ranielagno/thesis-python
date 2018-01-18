@@ -7,6 +7,8 @@ import argparse
 
 class Commands():
 
+    vehicle = None
+
     def setup(self):
 
         parser = argparse.ArgumentParser()
@@ -24,18 +26,11 @@ class Commands():
         while not self.vehicle.is_armable:
             print " Waiting for vehicle to initialise..."
             time.sleep(1)
-        
 
-        vehicleParams = self.getVehicleParams();
-        self.printVehicleParams()
+        return self.vehicle
 
-        callbacks = Callbacks(self.vehicle)
-        """
-        if not self.vehicle.is_armable:
-            return "Error!"
-        """
-        return vehicleParams
-
+    def getVehicle(self):
+        retunr self.vehicle
 
     def getVehicleParams(self):
 
@@ -43,8 +38,8 @@ class Commands():
         vehicleParams = {
             #Global Location (relative altitude)
             "gps_location": {
-                "latitude": 14.605160,
-                "longitude": 121.002181,
+                "latitude": self.vehicle.location.global_relative_frame.lat,
+                "longitude": self.vehicle.location.global_relative_frame.lon,
                 "altitude": self.vehicle.location.global_relative_frame.alt
             },
             "velocity": self.vehicle.velocity,
@@ -62,15 +57,6 @@ class Commands():
             "heading": self.vehicle.heading
         }
 
-        """
-        system status state
-        armable
-        Mode
-        armed
-        heading
-        gps location
-        battery
-        """
         return vehicleParams
 
     def arm(self):
@@ -153,12 +139,13 @@ class Commands():
         Gets distance in metres to the current waypoint.
         It returns None for the first waypoint (Home location).
         """
-        nextwaypoint = self.vehicle.commands.next
-        if nextwaypoint==0:
+
+        if self.nextwaypoint==0:
             return None
 
         # Commands are zero indexed
-        missionitem = self.vehicle.commands[nextwaypoint-1]
+        missionitem = self.vehicle.commands[self.nextwaypoint-1]
+
         lat = missionitem.x
         lon = missionitem.y
         alt = missionitem.z
@@ -181,7 +168,7 @@ class Commands():
         #This is ignored if the vehicle is already in the air.
         self.cmds.add(
             Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, 10))
+            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, data['altitude'))
 
         for coords in data[u'points']:
             # Create and add commands
@@ -191,10 +178,8 @@ class Commands():
                 coords[u'latitude'], coords[u'longitude'], data['altitude'])
             self.cmds.add(self.cmd)
 
-	    self.cmds.add(Command(
-                0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-                mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH, 0, 0, 0, 0, 0, 0,
-                0, 0, 10))
+        self.cmds.add(self.cmd)
+
         print " Upload new commands to vehicle"
         self.cmds.upload()
 
@@ -202,6 +187,7 @@ class Commands():
         self.takeOff(data['altitude'])
 
         print "Starting mission"
+
         # Reset mission set to first (0) waypoint
         self.vehicle.commands.next=0
 
@@ -213,47 +199,19 @@ class Commands():
             time.sleep(1)
 
         while True:
-            nextwaypoint = self.vehicle.commands.next
-            print 'Distance to waypoint ({0}): {1:.4f}'.format(
-            nextwaypoint, self.distance_to_current_waypoint())
+            self.nextwaypoint = self.vehicle.commands.next
+            print 'Distance to waypoint (%s): %s' % (
+            self.nextwaypoint, self.distance_to_current_waypoint())
 
             # Dummy waypoint - as soon as we reach waypoint 4
             # this is true and we exit.
-            if nextwaypoint>len(data['points']):
+            if self.nextwaypoint > len(data['points']):
                 print "Exit 'standard' mission when start",
-                print "heading to final waypoint %s" % len(data['points'])
+                print "heading to final waypoint %s" % self.nextwaypoint
                 break;
-                time.sleep(1)
-        self.returnToLand()
 
-    def monitorMission(self):
-	    # Monitor mission.
-        # Demonstrates getting and setting the command number
-        # Uses distance_to_current_waypoint(),
-        # a convenience function for finding the distance to the next waypoint.
-
-        while True:
-            nextwaypoint = self.vehicle.commands.next
-            print 'Distance to waypoint ({0}): {1:.4f}'.format(
-                nextwaypoint, self.distance_to_current_waypoint())
-
-            # Dummy waypoint - as soon as we reach waypoint 4
-            # this is true and we exit.
-            if nextwaypoint==len(data['points']):
-                print "Exit 'standard' mission when start",
-                print "heading to final waypoint %s" % len(data['points'])
-                break;
             time.sleep(1)
-        self.returnToLand()
-    """
-	def monitorTakeOff(self):
-	    # Check that vehicle has reached takeoff altitude
-        while True:
-            print " Altitude: ", self.vehicle.location.global_relative_frame.alt
-            #Break and return from function just below target altitude.
-            if self.vehicle.location.global_relative_frame.alt>=altitude*0.95:
-                print "Reached target altitude"
-                break;
-            time.sleep(1)
-        print("Take off complete")
-    """
+         
+        print "Commencing drone landing..."
+        self.land()
+

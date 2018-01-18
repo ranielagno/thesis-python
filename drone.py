@@ -8,18 +8,20 @@ import json
 import time
 
 thread = None
+commands = Commands()
 thread_lock = Lock()
+vehicle = commands.getVehicle()
 
 class Drone(Resource):
-    commands = None
 
     def get(self,command):
         global commands
-        commands = Commands()
-        self.vehicleParams = commands.setup()
-        print self.vehicleParams
+        global vehicle
+        
+        if vehicle is None:     
+            vehicle = commands.setup()
 
-        return self.vehicleParams
+        return commands.getVehicleParams()
 
     def post(self,command):
         global commands
@@ -36,32 +38,28 @@ class Drone(Resource):
             print data
             commands.setMission(data)
 
-    @staticmethod
-    def returnCommand():
-        global commands
-        return commands
 
-"""
 class DroneParams(Namespace):
 
     socketio = None
+
     def __init__(self,*args):
-        global socketio
         super(DroneParams, self).__init__(args[0])
-        socketio = args[1]
+        self.socketio = args[1]
 
     def on_connect(self):
         global thread
-        global socketio
+        global commands
+
         print "Connected"
 
         @copy_current_request_context
         def getParamsTask():
             while 1:
                 print "Emitting..."
-                emit("paramaters", Drone().returnCommand().getVehicleParams())
-                socketio.sleep(1)
+                emit("paramaters", commands.getVehicleParams())
+                self.socketio.sleep(1)
+
         with thread_lock:
             if thread is None:
-                thread = socketio.start_background_task(target=getParamsTask)
-"""
+                thread = self.socketio.start_background_task(target=getParamsTask)
