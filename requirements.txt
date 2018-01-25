@@ -2,6 +2,8 @@ Flask
 flask-restful
 flask-socketio
 uwsgi
+eventlet
+RPi.GPIO
 screen
 numpy
 future
