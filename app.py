@@ -1,7 +1,7 @@
 from flask import Flask, render_template
 from flask_restful import Resource, Api
 from flask_socketio import SocketIO, emit
-from drone import Drone
+from drone import Drone, DroneParams
 
 app = Flask(__name__)
 api = Api(app)

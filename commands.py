@@ -1,6 +1,5 @@
 from dronekit import connect, VehicleMode, LocationGlobalRelative, Command
 from pymavlink import mavutil
-from callbacks import Callbacks
 import time
 import math
 import argparse
@@ -30,7 +29,7 @@ class Commands():
         return self.vehicle
 
     def getVehicle(self):
-        retunr self.vehicle
+        return self.vehicle
 
     def getVehicleParams(self):
 
@@ -168,7 +167,8 @@ class Commands():
         #This is ignored if the vehicle is already in the air.
         self.cmds.add(
             Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, data['altitude'))
+            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, data['altitude'])
+        )
 
         for coords in data[u'points']:
             # Create and add commands
