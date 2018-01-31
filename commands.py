@@ -1,5 +1,6 @@
 from dronekit import connect, VehicleMode, LocationGlobalRelative, Command
 from pymavlink import mavutil
+import config
 import time
 import math
 import argparse
@@ -11,7 +12,7 @@ class Commands():
     def setup(self):
 
         parser = argparse.ArgumentParser()
-        parser.add_argument('--connect', default='/dev/ttyACM0')
+        parser.add_argument('--connect', default=config.connection_string)
         args = parser.parse_args()
 
         # Connect to the Vehicle
@@ -20,7 +21,7 @@ class Commands():
 
         print "Basic pre-arm checks"
 
-        
+
         # Don't let the user try to arm until autopilot is ready
         while not self.vehicle.is_armable:
             print " Waiting for vehicle to initialise..."
@@ -211,7 +212,6 @@ class Commands():
                 break;
 
             time.sleep(1)
-         
+
         print "Commencing drone landing..."
         self.land()
-
