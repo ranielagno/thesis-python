@@ -24,6 +24,7 @@ class Drone(Resource):
     def get(self,command):
         global commands
         global vehicle
+        global gas_sensor
 
         if vehicle is None:
             vehicle = commands.setup()
@@ -69,12 +70,11 @@ class Status(Namespace):
         @copy_current_request_context
         def getStatusTask():
             while self.is_connected:
-                print "Emitting..."
-                emit("paramaters", commands.getVehicleParams())
+                emit("parameters", commands.getVehicleParams())
                 eventlet.sleep(0.5)
 
                 # for updating the client of gas location
-                if gas_sensor.location:
+                if gas_sensor and gas_sensor.location:
                     for gps_location in gas_sensor.location:
                         if gps_location not in gas_locations:
                             emit('gas_detected', gps_location)

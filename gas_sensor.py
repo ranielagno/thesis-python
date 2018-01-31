@@ -1,5 +1,6 @@
-import RPi.GPIO as GPIO
+import time
 import eventlet
+import random
 import config
 
 
@@ -16,6 +17,8 @@ class GasSensor():
         self.vehicle = vehicle
 
         if config.build_type is 'prod':
+            import RPi.GPIO as GPIO
+
             # setup GPIO
             GPIO.setwarnings(False)
             GPIO.setmode(GPIO.BOARD)
@@ -30,7 +33,7 @@ class GasSensor():
     def detectGas(self, pin):
 
         print "Gas Detected!"
-        eventlet.sleep(1)
+        time.sleep(1)
 
         # Code for sensing while drone is ACTIVE
         # self.vehicle.system_status.state is "ACTIVE"

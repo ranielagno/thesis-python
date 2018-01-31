@@ -1,9 +1,11 @@
 from dronekit import connect, VehicleMode, LocationGlobalRelative, Command
+from flask import copy_current_request_context
 from pymavlink import mavutil
 import config
 import time
 import math
 import argparse
+import eventlet
 
 class Commands():
 
@@ -21,11 +23,12 @@ class Commands():
 
         print "Basic pre-arm checks"
 
-
         # Don't let the user try to arm until autopilot is ready
         while not self.vehicle.is_armable:
             print " Waiting for vehicle to initialise..."
             time.sleep(1)
+
+        self.pool = eventlet.GreenPool(1)
 
         return self.vehicle
 
@@ -105,15 +108,24 @@ class Commands():
         print "Taking off!"
         self.vehicle.simple_takeoff(altitude) # Take off to target altitude
 
-        # Check that vehicle has reached takeoff altitude
-        while True:
-            print " Altitude: ", self.vehicle.location.global_relative_frame.alt
-            #Break and return from function just below target altitude.
-            if self.vehicle.location.global_relative_frame.alt>=altitude*0.95:
-                print "Reached target altitude"
-                break;
-            time.sleep(1)
-        print("Take off complete")
+        #@copy_current_request_context
+        def monitorTakeOffTask():
+            print "Spawning monitorTakeOffTask method"
+
+            # Check that vehicle has reached takeoff altitude
+            # -*- coding: utf-8 -*-
+            #while self.vehicle.mode not in ("LAND", "RTL"):
+            while 1:
+                print " Altitude: ", self.vehicle.location.global_relative_frame.alt
+                #Break and return from function just below target altitude.
+                if self.vehicle.location.global_relative_frame.alt>=altitude*0.95:
+                    print "Reached target altitude"
+                    break;
+                time.sleep(1)
+            print("Take off complete")
+
+        #self.pool.spawn_n(monitorTakeOffTask)
+        monitorTakeOffTask()
 
     def printVehicleParams(self):
         print " Global Location (relative altitude): {}".format(
@@ -198,19 +210,33 @@ class Commands():
             print "Waiting for AUTO mode"
             time.sleep(1)
 
-        while True:
-            self.nextwaypoint = self.vehicle.commands.next
-            print 'Distance to waypoint (%s): %s' % (
-            self.nextwaypoint, self.distance_to_current_waypoint())
+        #@copy_current_request_context
+        def monitorMissionTask():
+            print "Spawning monitorMissionTask method"
 
-            # Dummy waypoint - as soon as we reach waypoint 4
-            # this is true and we exit.
-            if self.nextwaypoint > len(data['points']):
-                print "Exit 'standard' mission when start",
-                print "heading to final waypoint %s" % self.nextwaypoint
-                break;
+            while 1:
+                self.nextwaypoint = self.vehicle.commands.next
+                print 'Distance to waypoint (%s): %s' % (self.nextwaypoint,
+                 self.distance_to_current_waypoint())
 
-            time.sleep(1)
+                # Dummy waypoint - as soon as we reach waypoint 4
+                # this is true and we exit.
 
-        print "Commencing drone landing..."
-        self.land()
+                if self.nextwaypoint > len(data['points']):
+                    print "Exit 'standard' mission when start",
+                    print "heading to final waypoint %s" % self.nextwaypoint
+                    break;
+
+                time.sleep(1)
+
+            #if self.vehicle.mode is "AUTO":
+            print "Commencing drone return to landing..."
+            self.returnToLand()
+            """
+            else:
+                self.cmds.clear()
+                self.cmds.upload()
+            """
+
+        #self.pool.spawn_n(monitorMissionTask)
+        monitorMissionTask()
