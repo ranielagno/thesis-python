@@ -5,6 +5,7 @@ from commands import Commands
 from gas_sensor import GasSensor
 
 import eventlet
+import config
 import json
 import time
 
@@ -12,8 +13,7 @@ commands = Commands()
 
 # initializing entities
 vehicle = commands.getVehicle()
-#gas_sensor = None
-gas_sensor = GasSensor(vehicle)
+gas_sensor = None
 
 # for filtering repeated locations
 gas_locations = []
@@ -23,11 +23,14 @@ class Drone(Resource):
 
     def get(self,command):
         global commands
-        global vehicle  
-        
-        if vehicle is None:     
+        global vehicle
+
+        if vehicle is None:
             vehicle = commands.setup()
             gas_sensor = GasSensor(vehicle)
+
+            if config.build_type is 'dev':
+                eventlet.spawn_n(gas_sensor.testDetectGas)
 
         return commands.getVehicleParams()
 
@@ -69,9 +72,8 @@ class Status(Namespace):
                 print "Emitting..."
                 emit("paramaters", commands.getVehicleParams())
                 eventlet.sleep(0.5)
-            
+
                 # for updating the client of gas location
-                """
                 if gas_sensor.location:
                     for gps_location in gas_sensor.location:
                         if gps_location not in gas_locations:
@@ -79,7 +81,7 @@ class Status(Namespace):
                             gas_locations.append(gps_location)
                             eventlet.sleep(0.1)
                     gas_sensor.location = []
-                """
+
             print "Get status task finished"
 
         if commands.getVehicle() is not None:
@@ -89,5 +91,3 @@ class Status(Namespace):
 
         print "Disconnect"
         self.is_connected = False
-
-
