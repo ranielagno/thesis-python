@@ -164,12 +164,11 @@ class Commands():
         # Add new commands.
         #The meaning/order of the parameters is documented in the Command class.
 
-        #Add MAV_CMD_NAV_TAKEOFF command.
-        #This is ignored if the vehicle is already in the air.
+        print "Airspeed: ", data['airspeed']
         self.cmds.add(
             Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, data['altitude'])
-        )
+            mavutil.mavlink.MAV_CMD_DO_CHANGE_SPEED, 0, 0, 0, data['airspeed'],
+            0, 0, 0, 0, 0))
 
         for coords in data[u'points']:
             # Create and add commands
