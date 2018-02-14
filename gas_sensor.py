@@ -40,9 +40,9 @@ class GasSensor():
         if self.vehicle is not None:
 
             gps_location = {
-                "latitude": vehicle.location.global_relative_frame.lat,
-                "longitude": vehicle.location.global_relative_frame.lon,
-                "altitude": vehicle.location.global_relative_frame.alt
+                "latitude": self.vehicle.location.global_relative_frame.lat,
+                "longitude": self.vehicle.location.global_relative_frame.lon,
+                "altitude": self.vehicle.location.global_relative_frame.alt
             }
             self.location.append(gps_location)
 

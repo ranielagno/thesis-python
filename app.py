@@ -1,3 +1,4 @@
+from eventlet import wsgi
 import eventlet
 eventlet.monkey_patch()
 
@@ -19,5 +20,6 @@ def index():
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    #socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    wsgi.server(eventlet.listen(('', 5000)), app)
     

@@ -23,10 +23,12 @@ class Commands():
 
         print "Basic pre-arm checks"
 
+        """
         # Don't let the user try to arm until autopilot is ready
         while not self.vehicle.is_armable:
             print " Waiting for vehicle to initialise..."
             time.sleep(1)
+        """
 
         self.pool = eventlet.GreenPool(1)
 
